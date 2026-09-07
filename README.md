@@ -1,2 +1,1721 @@
-# thi-dua-A6
-thi đua 11a6
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>11A6 POINTS • Quản lý thi đua trực tuyến</title>
+<!-- Tailwind CSS for modern responsive styling -->
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+  body {
+    font-family: 'Inter', sans-serif;
+    background-color: #f4f6fb;
+    color: #1e293b;
+    min-height: 100vh;
+  }
+  .gradient-header {
+    background: linear-gradient(135deg, #4f46e5, #7c3aed);
+  }
+  .active-tab {
+    background-color: #4f46e5 !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+  }
+  .student-card {
+    transition: all 0.15s ease-in-out;
+  }
+  .student-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.06);
+  }
+  .student-card:active {
+    transform: scale(0.985);
+  }
+  /* Toast animation */
+  #toast {
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease;
+  }
+  #toast.show {
+    transform: translate(-50%, 0);
+    opacity: 1;
+  }
+  #toast.hide {
+    transform: translate(-50%, 20px);
+    opacity: 0;
+  }
+  /* AI Gradient & Animations */
+  .ai-gradient-bg {
+    background: linear-gradient(135deg, #6366f1, #a855f7, #ec4899);
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+  .scrollbar-none {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  /* Presentation & Fullscreen Mode */
+  body.fullscreen-active {
+    background-color: #0f172a !important;
+    color: #f8fafc !important;
+  }
+  body.fullscreen-active .ai-power-bar {
+    display: none !important;
+  }
+  body.fullscreen-active .student-card {
+    padding: 1rem !important;
+    border-color: #334155 !important;
+  }
+</style>
+</head>
+<body class="pb-10">
+
+<header class="gradient-header text-white text-center pt-8 pb-10 px-4 rounded-b-[2rem] shadow-lg relative">
+  <div class="max-w-3xl mx-auto">
+    <div id="connectionBadge" onclick="openCloudModal()" class="inline-flex items-center gap-2 bg-white/20 hover:bg-white/30 cursor-pointer transition backdrop-blur-md px-3.5 py-1.5 rounded-full text-xs font-semibold mb-3 border border-white/20">
+      <span class="w-2.5 h-2.5 rounded-full bg-yellow-400 animate-pulse" id="statusDot"></span>
+      <span id="statusText">Đang kết nối máy chủ...</span>
+      <i class="fa-solid fa-cloud text-[10px] opacity-80 ml-1"></i>
+    </div>
+    <h1 class="text-3xl font-extrabold tracking-tight sm:text-4xl">⭐ 11A6 POINTS</h1>
+    <p class="text-indigo-100 mt-1 text-sm font-medium">Nền tảng thi đua (Gốc 100đ/học sinh) • Đồng bộ Live</p>
+    
+    <div id="currentUserDisplay" class="mt-3 text-xs text-indigo-200 hidden">
+      👤 Người thao tác: <span id="currentUserName" class="font-bold text-white bg-indigo-900/40 px-2 py-0.5 rounded">Chưa xác định</span>
+      <button onclick="changeUser()" class="underline ml-2 hover:text-white">Đổi</button>
+    </div>
+  </div>
+</header>
+
+<main class="max-w-3xl mx-auto px-4 -mt-5">
+  <!-- Team Navigation Tabs -->
+  <div class="grid grid-cols-4 gap-2 mb-4 bg-white p-1.5 rounded-2xl shadow-sm border border-slate-100">
+    <button class="tab-btn active-tab py-3 text-xs sm:text-sm font-bold rounded-xl transition-all text-slate-600 bg-slate-50 hover:bg-slate-100" onclick="chooseGroup(1)">TỔ 1</button>
+    <button class="tab-btn py-3 text-xs sm:text-sm font-bold rounded-xl transition-all text-slate-600 bg-slate-50 hover:bg-slate-100" onclick="chooseGroup(2)">TỔ 2</button>
+    <button class="tab-btn py-3 text-xs sm:text-sm font-bold rounded-xl transition-all text-slate-600 bg-slate-50 hover:bg-slate-100" onclick="chooseGroup(3)">TỔ 3</button>
+    <button class="tab-btn py-3 text-xs sm:text-sm font-bold rounded-xl transition-all text-slate-600 bg-slate-50 hover:bg-slate-100" onclick="chooseGroup(4)">TỔ 4</button>
+  </div>
+
+  <!-- Group Management Page -->
+  <div id="groupPage" class="space-y-4">
+    <!-- Search Bar -->
+    <div class="relative">
+      <i class="fa-solid font-black fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+      <input id="search" type="text" placeholder="🔎 Tìm kiếm tên thành viên trong tổ..." oninput="renderGroup()"
+        class="w-full pl-11 pr-4 py-3.5 bg-white border border-slate-200 rounded-2xl shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium text-slate-800">
+    </div>
+
+    <!-- Quick Action Buttons -->
+    <div class="grid grid-cols-2 sm:grid-cols-5 gap-2">
+      <button onclick="requestProtected('undo')" class="bg-white hover:bg-slate-50 text-slate-700 font-bold py-2.5 px-3 rounded-xl border border-slate-200 shadow-sm text-xs sm:text-sm flex items-center justify-center gap-1.5 transition">
+        <i class="fa-solid fa-rotate-left text-amber-500"></i> Hoàn tác
+      </button>
+      <button onclick="showLeaderboard()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 px-3 rounded-xl shadow-md text-xs sm:text-sm flex items-center justify-center gap-1.5 transition">
+        <i class="fa-solid fa-trophy text-yellow-300"></i> Xếp hạng
+      </button>
+      <button onclick="toggleFullscreen()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 px-3 rounded-xl shadow-md text-xs sm:text-sm flex items-center justify-center gap-1.5 transition">
+        <i class="fa-solid fa-expand text-emerald-200" id="fsIcon"></i> <span id="fsBtnText">Phóng to màn hình</span>
+      </button>
+      <button onclick="requestProtected('reset')" class="bg-white hover:bg-slate-50 text-rose-600 font-bold py-2.5 px-3 rounded-xl border border-slate-200 shadow-sm text-xs sm:text-sm flex items-center justify-center gap-1.5 transition">
+        <i class="fa-solid fa-arrows-rotate"></i> Reset về 100đ
+      </button>
+      <button onclick="requestProtected('classNoise')" class="bg-amber-50 hover:bg-amber-100 text-amber-800 font-bold py-2.5 px-3 rounded-xl border border-amber-200 shadow-sm text-xs sm:text-sm flex items-center justify-center gap-1.5 transition">
+        <i class="fa-solid fa-volume-xmark text-amber-600"></i> Lớp ồn (-10đ)
+      </button>
+      <button onclick="openCloudModal()" class="col-span-2 sm:col-span-1 bg-sky-600 hover:bg-sky-700 text-white font-bold py-2.5 px-3 rounded-xl shadow-md text-xs sm:text-sm flex items-center justify-center gap-1.5 transition">
+        <i class="fa-solid fa-server text-sky-200"></i> Máy chủ Cloud
+      </button>
+    </div>
+
+    <!-- AI Power Tools Bar -->
+    <div class="ai-power-bar bg-gradient-to-r from-indigo-900 via-purple-900 to-slate-900 text-white p-3.5 rounded-2xl shadow-lg border border-purple-500/30 space-y-2">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="flex h-3 w-3 relative">
+            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-purple-400 opacity-75"></span>
+            <span class="relative inline-flex rounded-full h-3 w-3 bg-purple-500"></span>
+          </span>
+          <span class="text-xs font-black tracking-wider uppercase bg-clip-text text-transparent bg-gradient-to-r from-purple-300 via-pink-300 to-indigo-200">Trợ lý Trí tuệ Nhân tạo Gemini AI</span>
+        </div>
+        <span class="text-[10px] bg-purple-500/30 text-purple-200 border border-purple-400/30 px-2 py-0.5 rounded-full font-semibold">Gemini 3 Flash</span>
+      </div>
+
+      <div class="grid grid-cols-3 gap-2">
+        <button onclick="openAIReportModal()" class="ai-gradient-bg hover:opacity-90 text-white font-bold py-2 px-2.5 rounded-xl shadow-md text-xs flex items-center justify-center gap-1.5 transition">
+          <i class="fa-solid fa-wand-magic-sparkles"></i> Báo cáo AI
+        </button>
+        <button onclick="openAIChatModal()" class="bg-white/10 hover:bg-white/20 text-white font-bold py-2 px-2.5 rounded-xl border border-white/10 text-xs flex items-center justify-center gap-1.5 transition">
+          <i class="fa-solid fa-robot text-purple-300"></i> Cố vấn AI
+        </button>
+        <button onclick="openAINLInputModal()" class="bg-white/10 hover:bg-white/20 text-white font-bold py-2 px-2.5 rounded-xl border border-white/10 text-xs flex items-center justify-center gap-1.5 transition">
+          <i class="fa-solid fa-bolt text-amber-300"></i> Nhập nhanh AI
+        </button>
+      </div>
+    </div>
+
+    <!-- Summary Stats -->
+    <div class="grid grid-cols-2 gap-3">
+      <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 text-center">
+        <span class="block text-2xl font-extrabold text-indigo-600" id="groupTotal">0</span>
+        <span class="text-xs text-slate-500 font-medium uppercase tracking-wider">Tổng điểm tổ</span>
+      </div>
+      <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 text-center">
+        <span class="block text-2xl font-extrabold text-slate-800" id="groupMembers">0</span>
+        <span class="text-xs text-slate-500 font-medium uppercase tracking-wider">Thành viên</span>
+      </div>
+    </div>
+
+    <div class="text-center text-xs text-slate-500 my-2">
+      👇 Nhấn vào tên học sinh để cộng điểm phát biểu hoặc trừ điểm vi phạm (Gốc 100đ)
+    </div>
+
+    <!-- Header Row for Student Table -->
+    <div class="grid grid-cols-12 gap-2 px-4 py-2 text-xs font-bold text-slate-400 uppercase tracking-wider text-center">
+      <div class="col-span-1 text-left">#</div>
+      <div class="col-span-5 text-left">Học sinh</div>
+      <div class="col-span-2 text-emerald-600">Cộng</div>
+      <div class="col-span-2 text-rose-500">Trừ</div>
+      <div class="col-span-2 text-indigo-600 text-right">Tổng điểm</div>
+    </div>
+
+    <!-- Student List Container -->
+    <div id="groupList" class="space-y-2"></div>
+
+    <!-- Detailed History Sections -->
+    <div class="mt-8 space-y-6">
+      <!-- Bonus History -->
+      <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
+        <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2 mb-3">
+          <i class="fa-solid fa-circle-plus text-emerald-500"></i> Thành tích cộng điểm gần đây
+        </h3>
+        <div id="bonusHistoryList" class="space-y-2 max-h-60 overflow-y-auto"></div>
+      </div>
+
+      <!-- Violation History -->
+      <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
+        <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2 mb-3">
+          <i class="fa-solid fa-triangle-exclamation text-rose-500"></i> Lỗi vi phạm gần đây
+        </h3>
+        <div id="violationHistoryList" class="space-y-2 max-h-60 overflow-y-auto"></div>
+      </div>
+
+      <!-- Audit Trail -->
+      <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
+        <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2 mb-3">
+          <i class="fa-solid fa-clock-rotate-left text-indigo-500"></i> Lịch sử người thao tác (Máy chủ)
+        </h3>
+        <div id="auditHistoryList" class="space-y-2 max-h-60 overflow-y-auto text-xs"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Leaderboard Page -->
+  <div id="leaderPage" class="hidden space-y-4">
+    <div class="flex justify-between items-center bg-white p-3 rounded-2xl border border-slate-100 shadow-sm">
+      <button onclick="showGroup()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-4 py-2 rounded-xl text-sm transition">
+        ← Quay lại danh sách tổ
+      </button>
+      <div class="text-right">
+        <div class="text-xs text-slate-500 font-medium">Tổng điểm toàn lớp</div>
+        <div class="text-xl font-black text-indigo-600" id="allTotal">0</div>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm">
+      <h2 class="text-center font-extrabold text-slate-800 text-lg mb-4">🏆 BẢNG TỔNG XẾP HẠNG LỚP 11A6</h2>
+      <div id="leaderList" class="space-y-2"></div>
+    </div>
+  </div>
+</main>
+
+<!-- Modal 1: User Confirmation -->
+<div id="userModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+  <div class="bg-white w-full max-w-md rounded-3xl p-6 shadow-2xl space-y-4">
+    <div class="text-center">
+      <div class="w-12 h-12 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-3 text-xl">
+        <i class="fa-solid fa-user-pen"></i>
+      </div>
+      <h2 class="text-xl font-extrabold text-slate-800">Xác nhận người thao tác</h2>
+      <p class="text-slate-500 text-xs mt-1">Vui lòng nhập họ tên của bạn để hệ thống lưu vào lịch sử máy chủ.</p>
+    </div>
+    <input id="userNameInput" type="text" placeholder="Nhập họ và tên cán bộ/học sinh..."
+      class="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none font-medium text-sm">
+    <div id="userNameStatus" class="text-xs text-rose-500 font-medium text-center"></div>
+    <button onclick="confirmUserName()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl transition text-sm">
+      Tiếp tục
+    </button>
+  </div>
+</div>
+
+<!-- Modal 2: Password Authentication -->
+<div id="passwordModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+  <div class="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl space-y-4">
+    <div class="text-center">
+      <div class="w-12 h-12 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto mb-3 text-xl">
+        <i class="fa-solid fa-lock"></i>
+      </div>
+      <h2 class="text-xl font-extrabold text-slate-800">Xác thực quyền thao tác</h2>
+      <p class="text-slate-500 text-xs mt-1">Nhập mật khẩu quản trị để thực hiện chức năng này.</p>
+    </div>
+    <input id="passwordInput" type="password" placeholder="Nhập mật khẩu..."
+      class="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none font-medium text-center text-lg">
+    <div id="passwordStatus" class="text-xs text-rose-500 font-medium text-center"></div>
+    <div class="grid grid-cols-2 gap-2">
+      <button onclick="closePasswordModal()" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 rounded-xl transition text-xs">Hủy</button>
+      <button onclick="checkPassword()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl transition text-xs">Xác nhận</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal 3: Point Entry & Rules -->
+<div id="entryModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 overflow-y-auto">
+  <div class="bg-white w-full max-w-md rounded-3xl p-6 shadow-2xl space-y-4 my-8">
+    <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+      <h2 class="text-lg font-extrabold text-slate-800">⭐ Cập nhật điểm thi đua</h2>
+      <button onclick="closeEntryModal()" class="text-slate-400 hover:text-slate-600 text-lg"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+
+    <div class="bg-indigo-50 p-3 rounded-xl text-indigo-900 font-bold text-sm text-center" id="entryStudent">
+      Học sinh: --
+    </div>
+
+    <div class="space-y-3">
+      <div>
+        <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Cộng điểm thành tích</label>
+        <select id="bonusSelect" onchange="applyBonusRule()" class="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm font-medium">
+          <option value="">-- Chọn thành tích cộng điểm --</option>
+          <option value="2|Đạt 8 điểm">Đạt 8 điểm (+2đ)</option>
+          <option value="5|Đạt 9 điểm">Đạt 9 điểm (+5đ)</option>
+          <option value="10|Đạt 10 điểm">Đạt 10 điểm (+10đ)</option>
+          <option value="5|Tham gia hoạt động của lớp">Tham gia hoạt động của lớp (+5đ)</option>
+          <option value="5|Duy trì nề nếp tốt trong cả tuần">Duy trì nề nếp tốt trong cả tuần (+5đ)</option>
+          <option value="0.5|Chủ động phát biểu xây dựng bài">Chủ động phát biểu xây dựng bài (+0.5đ)</option>
+        </select>
+        <div id="bonusEffect" class="text-xs text-emerald-600 font-semibold mt-1"></div>
+      </div>
+
+      <div>
+        <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Trừ điểm vi phạm</label>
+        <select id="violationSelect" onchange="applyViolationRule()" class="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm font-medium">
+          <option value="">-- Chọn lỗi vi phạm --</option>
+          <option value="-5|Không hoàn thành bài tập">Không hoàn thành bài tập (-5đ)</option>
+          <option value="-15|Đi trễ">Đi trễ (-15đ)</option>
+          <option value="-5|Nghỉ học không phép">Nghỉ học không phép (-5đ)</option>
+          <option value="-15|Không dọn vệ sinh">Không dọn vệ sinh (-15đ)</option>
+          <option value="-5|Mang đồ ăn vào lớp">Mang đồ ăn vào lớp (-5đ)</option>
+          <option value="-5|Mất trật tự">Mất trật tự (-5đ)</option>
+          <option value="-5|Sai đồng phục">Sai đồng phục (-5đ)</option>
+          <option value="-10|Lớp ồn">Lớp ồn (-10đ cả lớp)</option>
+          <option value="-20|Nói tục, chửi thề">Nói tục, chửi thề (-20đ)</option>
+          <option value="-50|Không tôn trọng giáo viên">Không tôn trọng giáo viên (-50đ)</option>
+          <option value="-10|Tự ý đổi chỗ">Tự ý đổi chỗ (-10đ)</option>
+          <option value="-20|Ăn vụng">Ăn vụng (-20đ)</option>
+          <option value="-50|Sử dụng điện thoại trong giờ học">Sử dụng điện thoại trong giờ học (-50đ)</option>
+          <option value="-10|Không hoàn thành nhiệm vụ lớp">Không hoàn thành nhiệm vụ lớp (-10đ)</option>
+        </select>
+        <input id="violationInput" type="text" placeholder="Hoặc nhập tên lỗi khác..." class="w-full mt-2 p-3 border border-slate-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+        <div id="violationEffect" class="text-xs text-rose-600 font-semibold mt-1"></div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-3 pt-2">
+        <div>
+          <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Điểm mỗi lần</label>
+          <input id="starInput" type="number" min="0.5" step="0.5" value="1" placeholder="Ví dụ: 0.5, 1, 2" oninput="updateCalculatedEffect()"
+            class="w-full p-3 border border-slate-200 rounded-xl font-bold text-center text-indigo-600 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Số lượng</label>
+          <input id="quantityInput" type="number" min="1" step="1" value="1" oninput="updateCalculatedEffect()"
+            class="w-full p-3 border border-slate-200 rounded-xl font-bold text-center text-slate-800 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+        </div>
+      </div>
+    </div>
+
+    <div class="pt-3 grid grid-cols-2 gap-2">
+      <button onclick="closeEntryModal()" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 rounded-xl transition text-xs">Hủy</button>
+      <button onclick="confirmAddPoint()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl transition text-xs shadow-md">⭐ Xác nhận</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal 4: AI Report Modal -->
+<div id="aiReportModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+  <div class="bg-white w-full max-w-2xl rounded-3xl p-6 shadow-2xl space-y-4 max-h-[90vh] flex flex-col">
+    <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+      <div class="flex items-center gap-2">
+        <div class="w-9 h-9 ai-gradient-bg text-white rounded-xl flex items-center justify-center text-lg shadow-sm">
+          <i class="fa-solid fa-wand-magic-sparkles"></i>
+        </div>
+        <div>
+          <h2 class="text-lg font-extrabold text-slate-800">Báo cáo Thi đua AI lớp 11A6</h2>
+          <p class="text-xs text-slate-500">Phân tích tự động dựa trên mốc gốc 100 điểm</p>
+        </div>
+      </div>
+      <button onclick="closeAIReportModal()" class="text-slate-400 hover:text-slate-600 text-lg"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+
+    <div id="aiReportContent" class="flex-1 overflow-y-auto p-4 bg-slate-50 rounded-2xl border border-slate-200/80 text-slate-800 text-sm leading-relaxed space-y-3">
+      <div class="text-center py-8 text-slate-400 space-y-3">
+        <i class="fa-solid fa-spinner fa-spin text-3xl text-purple-600"></i>
+        <p class="font-medium text-xs">Gemini AI đang tổng hợp và phân tích dữ liệu thi đua của 11A6...</p>
+      </div>
+    </div>
+
+    <div class="flex justify-between items-center pt-2">
+      <button onclick="copyAIReport()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2.5 px-4 rounded-xl text-xs transition flex items-center gap-1.5">
+        <i class="fa-regular fa-copy"></i> Sao chép Báo cáo
+      </button>
+      <button onclick="generateAIReport()" class="ai-gradient-bg hover:opacity-90 text-white font-bold py-2.5 px-4 rounded-xl text-xs transition flex items-center gap-1.5 shadow-md">
+        <i class="fa-solid fa-rotate"></i> Tạo lại
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal 5: AI Class Advisor Chatbot -->
+<div id="aiChatModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+  <div class="bg-white w-full max-w-xl rounded-3xl p-5 shadow-2xl space-y-3 max-h-[90vh] flex flex-col">
+    <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+      <div class="flex items-center gap-2">
+        <div class="w-9 h-9 bg-purple-600 text-white rounded-xl flex items-center justify-center text-lg shadow-sm">
+          <i class="fa-solid fa-robot"></i>
+        </div>
+        <div>
+          <h2 class="text-lg font-extrabold text-slate-800">Cố vấn Thi đua AI 11A6</h2>
+          <p class="text-xs text-slate-500">Hỏi đáp & tư vấn giải pháp quản lý nề nếp lớp học</p>
+        </div>
+      </div>
+      <button onclick="closeAIChatModal()" class="text-slate-400 hover:text-slate-600 text-lg"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+
+    <!-- Quick Prompts -->
+    <div class="flex gap-1.5 overflow-x-auto pb-1 text-[11px] scrollbar-none">
+      <button onclick="sendQuickPrompt('Tổ nào đang vi phạm nhiều nhất và làm sao để nâng điểm?')" class="whitespace-nowrap bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200 font-medium px-2.5 py-1 rounded-lg">
+        🔍 Phân tích tổ yếu
+      </button>
+      <button onclick="sendQuickPrompt('Gợi ý 3 trò chơi sinh hoạt lớp 15 phút nâng cao tinh thần đoàn kết.')" class="whitespace-nowrap bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 font-medium px-2.5 py-1 rounded-lg">
+        🎮 Trò chơi sinh hoạt
+      </button>
+      <button onclick="sendQuickPrompt('Viết một thông báo gửi nhóm Phụ huynh tuyên dương các học sinh điểm cao (>100đ).')" class="whitespace-nowrap bg-pink-50 text-pink-700 hover:bg-pink-100 border border-pink-200 font-medium px-2.5 py-1 rounded-lg">
+        📢 Soạn tin nhắn Phụ huynh
+      </button>
+    </div>
+
+    <!-- Chat History Container -->
+    <div id="aiChatHistory" class="flex-1 overflow-y-auto p-3 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-3 min-h-[250px]">
+      <div class="bg-white p-3 rounded-2xl border border-slate-200/60 shadow-sm text-xs text-slate-700 leading-relaxed space-y-1">
+        <div class="font-bold text-purple-700 flex items-center gap-1.5">
+          <i class="fa-solid fa-robot"></i> Cố vấn AI 11A6
+        </div>
+        <p>Xin chào! Tôi đã nắm rõ tình hình thi đua (gốc 100đ) của 46 học sinh lớp 11A6. Bạn cần trợ giúp thông báo, phân tích hay giải pháp gì hôm nay?</p>
+      </div>
+    </div>
+
+    <!-- Input Row -->
+    <div class="flex gap-2 pt-1">
+      <input id="aiChatInput" type="text" placeholder="Hỏi Gemini AI về thi đua lớp 11A6..." onkeydown="if(event.key==='Enter') sendAIChat()"
+        class="flex-1 px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:outline-none text-xs font-medium text-slate-800">
+      <button onclick="sendAIChat()" class="bg-purple-600 hover:bg-purple-700 text-white font-bold px-4 rounded-xl text-xs transition flex items-center justify-center">
+        <i class="fa-solid fa-paper-plane"></i>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal 6: AI Natural Language Smart Point Input -->
+<div id="aiNLInputModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+  <div class="bg-white w-full max-w-md rounded-3xl p-6 shadow-2xl space-y-4">
+    <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+      <div class="flex items-center gap-2">
+        <div class="w-9 h-9 bg-amber-500 text-white rounded-xl flex items-center justify-center text-lg shadow-sm">
+          <i class="fa-solid fa-bolt"></i>
+        </div>
+        <div>
+          <h2 class="text-lg font-extrabold text-slate-800">Nhập điểm Nhanh bằng AI</h2>
+          <p class="text-xs text-slate-500">Gõ lời nhắn tự nhiên, AI sẽ tự phân tích và cộng/trừ điểm</p>
+        </div>
+      </div>
+      <button onclick="closeAINLInputModal()" class="text-slate-400 hover:text-slate-600 text-lg"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+
+    <div>
+      <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Ví dụ nội dung lời nhắn:</label>
+      <p class="text-[11px] text-slate-500 bg-amber-50/80 p-2.5 rounded-xl border border-amber-200/60 mb-2 italic">
+        "Cộng 5đ cho Nam, Bảo và Hậu vì trực nhật sạch sẽ; trừ 5đ Khánh do đi trễ 10 phút"
+      </p>
+      <textarea id="aiNLInputText" rows="3" placeholder="Nhập câu mô tả thao tác cộng/trừ điểm cho học sinh..."
+        class="w-full p-3 border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-amber-500 focus:outline-none text-slate-800"></textarea>
+    </div>
+
+    <div id="aiNLPendingPreview" class="hidden bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs space-y-2">
+      <div class="font-bold text-slate-700 border-b border-slate-200 pb-1">⚡ AI đã phân tích thành công:</div>
+      <div id="aiNLPreviewList" class="space-y-1.5 max-h-40 overflow-y-auto"></div>
+    </div>
+
+    <div class="grid grid-cols-2 gap-2 pt-2">
+      <button onclick="closeAINLInputModal()" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 rounded-xl transition text-xs">Hủy</button>
+      <button id="aiNLParseBtn" onclick="processAINLInput()" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 rounded-xl transition text-xs shadow-md">
+        ✨ AI Phân tích
+      </button>
+      <button id="aiNLApplyBtn" onclick="applyAINLPoints()" class="hidden w-full col-span-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl transition text-xs shadow-md">
+        ✅ Xác nhận Cập nhật Điểm
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal 7: AI Individual Student Feedback Modal -->
+<div id="aiStudentModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+  <div class="bg-white w-full max-w-md rounded-3xl p-6 shadow-2xl space-y-4 text-center">
+    <div class="w-12 h-12 ai-gradient-bg text-white rounded-full flex items-center justify-center mx-auto text-xl shadow-md">
+      <i class="fa-solid fa-comment-dots"></i>
+    </div>
+    <div>
+      <h2 class="text-lg font-extrabold text-slate-800" id="aiStudentModalTitle">Nhận xét AI - Học sinh</h2>
+      <p class="text-xs text-slate-500 mt-0.5">Lời khuyên & Đánh giá cá nhân hóa từ Gemini AI</p>
+    </div>
+
+    <div id="aiStudentFeedbackContent" class="bg-slate-50 p-4 rounded-2xl border border-slate-200 text-left text-xs leading-relaxed text-slate-700 min-h-[100px] flex items-center justify-center">
+      <div class="text-center text-slate-400">
+        <i class="fa-solid fa-spinner fa-spin text-2xl text-purple-600 mb-2"></i>
+        <p>Gemini đang tổng hợp dữ liệu học sinh...</p>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-2 gap-2">
+      <button onclick="closeAIStudentModal()" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2.5 rounded-xl transition text-xs">Đóng</button>
+      <button onclick="copyAIStudentFeedback()" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-2.5 rounded-xl transition text-xs shadow-md">
+        <i class="fa-regular fa-copy"></i> Sao chép
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal 8: Reset Confirmation -->
+<div id="resetModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+  <div class="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl space-y-4 text-center">
+    <div class="w-12 h-12 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mx-auto mb-2 text-xl">
+      <i class="fa-solid fa-arrows-rotate"></i>
+    </div>
+    <h2 class="text-xl font-extrabold text-slate-800">Reset điểm thi đua tháng mới</h2>
+    <p class="text-slate-500 text-xs leading-relaxed">
+      Tất cả điểm cộng, điểm trừ và lịch sử vi phạm sẽ được xóa. Điểm số của <strong>toàn bộ học sinh sẽ trở về 100 điểm vốn ban đầu</strong>.
+    </p>
+    <div class="grid grid-cols-2 gap-2">
+      <button onclick="closeResetModal()" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 rounded-xl transition text-xs">Hủy</button>
+      <button onclick="confirmReset()" class="w-full bg-rose-600 hover:bg-rose-700 text-white font-bold py-3 rounded-xl transition text-xs">Reset về 100đ</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal 9: Cloud Server & Sync Settings -->
+<div id="cloudModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+  <div class="bg-white w-full max-w-lg rounded-3xl p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+    <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+      <div class="flex items-center gap-2">
+        <div class="w-10 h-10 bg-sky-100 text-sky-600 rounded-2xl flex items-center justify-center text-xl">
+          <i class="fa-solid fa-cloud-arrow-up"></i>
+        </div>
+        <div>
+          <h2 class="text-lg font-extrabold text-slate-800">Cấu hình Máy chủ & Lưu trữ Chung</h2>
+          <p class="text-xs text-slate-500">Đồng bộ dữ liệu thời gian thực cho toàn lớp (Real-time Cloud Sync)</p>
+        </div>
+      </div>
+      <button onclick="closeCloudModal()" class="text-slate-400 hover:text-slate-600 text-lg"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+
+    <div class="space-y-3 text-xs text-slate-700">
+      <div id="cloudStatusCard" class="p-3.5 rounded-2xl bg-sky-50 border border-sky-200 text-sky-900 flex items-start gap-3">
+        <i class="fa-solid fa-signal text-lg text-sky-600 mt-0.5"></i>
+        <div>
+          <div class="font-bold text-sm" id="cloudModalStatusTitle">Trạng thái Máy chủ</div>
+          <p class="mt-0.5 leading-relaxed" id="cloudModalStatusDesc">Đang kiểm tra kết nối cơ sở dữ liệu cloud...</p>
+        </div>
+      </div>
+
+      <div class="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 space-y-2">
+        <div class="font-bold text-slate-800 text-xs flex items-center gap-1.5">
+          <i class="fa-solid fa-globe text-indigo-600"></i> Hướng dẫn đưa trang web lên mạng (Có đường link dùng chung)
+        </div>
+        <p class="text-slate-600 text-[11px] leading-relaxed">
+          Để cả lớp cùng truy cập qua đường link đường dẫn web (Domain):
+        </p>
+        <ol class="list-decimal pl-4 space-y-1 text-[11px] text-slate-600">
+          <li>Đăng tải file <code>11A6_thi_dua.html</code> này lên dịch vụ web miễn phí (như <strong>GitHub Pages, Vercel, Netlify hoặc Render</strong>).</li>
+          <li>Mọi học sinh và giáo viên mở link trang web đó trên điện thoại/máy tính sẽ đều thấy cùng 1 dữ liệu cập nhật tức thì qua đám mây.</li>
+        </ol>
+      </div>
+
+      <div class="space-y-2 pt-1">
+        <label class="block font-bold text-slate-800 text-xs">⚙️ Nhập Firebase Config riêng (Nếu tự chạy trên Host riêng):</label>
+        <p class="text-[11px] text-slate-500">Nếu bạn tải file HTML về máy và tự tạo dự án Firebase Firestore miễn phí riêng, dán JSON Config vào đây:</p>
+        <textarea id="customFirebaseInput" rows="4" placeholder='{"apiKey": "...", "authDomain": "...", "projectId": "...", "storageBucket": "...", "messagingSenderId": "...", "appId": "..."}'
+          class="w-full p-3 border border-slate-200 rounded-xl text-xs font-mono focus:ring-2 focus:ring-sky-500 focus:outline-none bg-slate-900 text-emerald-400"></textarea>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-2 gap-2 pt-2">
+      <button onclick="clearCustomFirebaseConfig()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2.5 rounded-xl transition text-xs">Xóa cấu hình riêng</button>
+      <button onclick="saveCustomFirebaseConfig()" class="bg-sky-600 hover:bg-sky-700 text-white font-bold py-2.5 rounded-xl transition text-xs shadow-md">Lưu & Kết nối lại</button>
+    </div>
+  </div>
+</div>
+
+<!-- Custom Toast Notification -->
+<div id="toast" class="fixed bottom-5 left-1/2 -translate-x-1/2 bg-slate-900/90 text-white text-xs font-semibold px-4 py-3 rounded-2xl shadow-xl z-50 pointer-events-none opacity-0 flex items-center gap-2 max-w-xs text-center">
+  <span id="toastIcon">ℹ️</span>
+  <span id="toastMsg">Thông báo</span>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+// HẰNG SỐ ĐIỂM GỐC BAN ĐẦU CỦA MỖI HỌC SINH
+const BASE_SCORE = 100;
+const PROTECTED_PASSWORD = "3710";
+
+// Student list initial configuration
+const initialStudents = [
+  {"name": "Phạm Hà An", "group": 4}, {"name": "Trịnh Vân Anh", "group": 4},
+  {"name": "Nguyễn Trần Gia Bảo", "group": 1}, {"name": "Phạm Nguyễn Gia Bảo", "group": 4},
+  {"name": "Nguyễn Vũ Minh Châu", "group": 3}, {"name": "Nguyễn Thị Xuân Đào", "group": 4},
+  {"name": "Nguyễn Tiến Đạt", "group": 3}, {"name": "Trần Tiến Đạt", "group": 1},
+  {"name": "Hồ Tùng Dương", "group": 2}, {"name": "Trần Nguyễn Ánh Dương", "group": 2},
+  {"name": "Nguyễn Hoàng Phúc Hậu", "group": 1}, {"name": "Nguyễn Thái Hoàng", "group": 3},
+  {"name": "Trần Thị Sông Hương", "group": 1}, {"name": "Phan Huy Khánh", "group": 2},
+  {"name": "Phạm Đăng Khoa", "group": 4}, {"name": "Huỳnh Nhã Kỳ", "group": 4},
+  {"name": "Nguyễn Trần Lập", "group": 2}, {"name": "Nguyễn Thùy Linh", "group": 4},
+  {"name": "Phạm Hoàng Phương Linh", "group": 2}, {"name": "Vương Hoàng Long", "group": 3},
+  {"name": "Nguyễn Thị Quỳnh Mai", "group": 1}, {"name": "Đỗ Thị Thiên Ngân", "group": 2},
+  {"name": "Nguyễn Ngọc Thùy Ngân", "group": 1}, {"name": "Nguyễn Gia Nghi", "group": 3},
+  {"name": "Phạm Thị Hồng Ngọc", "group": 3}, {"name": "Huỳnh Ngọc Bảo Nhi", "group": 3},
+  {"name": "Trần Thị Hương Nhi", "group": 2}, {"name": "Trương Thị Hoàng Nhi", "group": 3},
+  {"name": "Đồng Đàm Phán", "group": 4}, {"name": "Nguyễn Thị Minh Phương", "group": 4},
+  {"name": "Phạm Thúy Phương", "group": 4}, {"name": "Nguyễn Hữu Tài", "group": 4},
+  {"name": "Cao Nguyễn Hoàng Thanh", "group": 3}, {"name": "Nguyễn Hoàng Kim Thanh", "group": 3},
+  {"name": "Nguyễn Thị Phương Thảo", "group": 2}, {"name": "Hà Đức Thịnh", "group": 3},
+  {"name": "Nguyễn Vi Toàn", "group": 1}, {"name": "Phạm Quynh Trang", "group": 2},
+  {"name": "Lê Khắc Tùng", "group": 2}, {"name": "Phạm Thị Ánh Tuyết", "group": 2},
+  {"name": "Lê Đình Nhã Uyên", "group": 4}, {"name": "Lê Quang Vinh", "group": 1},
+  {"name": "Lê Vy", "group": 3}, {"name": "Nguyễn Trường Vỹ", "group": 1},
+  {"name": "Bùi Thị Ngọc Yến", "group": 1}, {"name": "Nguyễn Huỳnh Bảo Ngọc", "group": 1}
+];
+
+// Global Application State
+window.appState = {
+  data: initialStudents.map(x => ({
+    ...x,
+    bonus: 0,
+    penalty: 0,
+    score: BASE_SCORE,
+    violations: [],
+    bonuses: []
+  })),
+  history: [],
+  auditHistory: [],
+  currentGroup: 1,
+  currentUser: localStorage.getItem("11A6_user_name") || "",
+  pendingAction: null,
+  pendingIndex: null,
+  selectedIndex: null,
+  isOnline: false
+};
+
+// Helper Functions
+function formatPoints(num) {
+  if (num === undefined || num === null || isNaN(num)) return "0";
+  return Number.isInteger(num) ? num.toString() : num.toFixed(1);
+}
+
+function esc(str) {
+  if (!str) return '';
+  return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function showToast(msg, icon = "ℹ️") {
+  const toast = document.getElementById("toast");
+  const iconEl = document.getElementById("toastIcon");
+  const msgEl = document.getElementById("toastMsg");
+  if (toast && iconEl && msgEl) {
+    iconEl.textContent = icon;
+    msgEl.textContent = msg;
+    toast.className = "fixed bottom-5 left-1/2 -translate-x-1/2 bg-slate-900/90 text-white text-xs font-semibold px-4 py-3 rounded-2xl shadow-xl z-50 pointer-events-none show";
+    setTimeout(() => {
+      toast.className = "fixed bottom-5 left-1/2 -translate-x-1/2 bg-slate-900/90 text-white text-xs font-semibold px-4 py-3 rounded-2xl shadow-xl z-50 pointer-events-none hide";
+    }, 2500);
+  }
+}
+
+function logAction(action, details) {
+  const time = new Date().toLocaleTimeString("vi-VN", { hour: '2-digit', minute: '2-digit' });
+  const entry = {
+    user: window.appState.currentUser || "Vô danh",
+    action,
+    details,
+    time
+  };
+  if (!Array.isArray(window.appState.auditHistory)) window.appState.auditHistory = [];
+  window.appState.auditHistory.push(entry);
+}
+
+function syncToCloud() {
+  saveToLocalStorage();
+  if (docRef && window.appState.isOnline) {
+    setDoc(docRef, {
+      students: window.appState.data,
+      history: window.appState.history,
+      auditHistory: window.appState.auditHistory,
+      lastUpdated: new Date().toISOString()
+    }, { merge: true }).catch(err => console.warn("Cloud sync failed:", err));
+  }
+}
+
+function saveToLocalStorage() {
+  try {
+    localStorage.setItem("11A6_local_data", JSON.stringify(window.appState.data));
+    localStorage.setItem("11A6_local_audit", JSON.stringify(window.appState.auditHistory));
+  } catch(e) {}
+}
+
+function loadFromLocalStorage() {
+  try {
+    const data = localStorage.getItem("11A6_local_data");
+    if (data) window.appState.data = JSON.parse(data);
+    const audit = localStorage.getItem("11A6_local_audit");
+    if (audit) window.appState.auditHistory = JSON.parse(audit);
+    renderGroup();
+  } catch(e) {}
+}
+
+// Firebase App Config
+const appId = typeof __app_id !== 'undefined' ? __app_id : '11a6-emulation-app';
+const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+let db = null;
+let auth = null;
+let docRef = null;
+
+async function initFirebase() {
+  let configToUse = firebaseConfig;
+  const savedCustomConfig = localStorage.getItem("11A6_custom_firebase_config");
+  if (savedCustomConfig) {
+    try {
+      configToUse = JSON.parse(savedCustomConfig);
+    } catch(e) {}
+  }
+
+  if (!configToUse) {
+    updateStatus("Chưa kết nối Máy Chủ (Nhấn để cài đặt)", "offline");
+    loadFromLocalStorage();
+    return;
+  }
+
+  try {
+    const app = initializeApp(configToUse);
+    auth = getAuth(app);
+    db = getFirestore(app);
+
+    if (initialAuthToken && configToUse === firebaseConfig) {
+      await signInWithCustomToken(auth, initialAuthToken);
+    } else {
+      await signInAnonymously(auth);
+    }
+
+    const currentAppId = configToUse === firebaseConfig ? appId : (configToUse.projectId || '11a6-class-app');
+    docRef = doc(db, 'artifacts', currentAppId, 'public', 'data', 'emulation', 'class11A6');
+
+    onSnapshot(docRef, (docSnap) => {
+      if (docSnap.exists()) {
+        const cloudData = docSnap.data();
+        if (Array.isArray(cloudData.students) && cloudData.students.length > 0) {
+          window.appState.data = cloudData.students.map(s => ({
+            ...s,
+            score: BASE_SCORE + (s.bonus || 0) - (s.penalty || 0)
+          }));
+        }
+        if (Array.isArray(cloudData.history)) {
+          window.appState.history = cloudData.history;
+        }
+        if (Array.isArray(cloudData.auditHistory)) {
+          window.appState.auditHistory = cloudData.auditHistory;
+        }
+      } else {
+        syncToCloud();
+      }
+      updateStatus("🟢 Đã kết nối Máy chủ Cloud (Đồng bộ live)", "online");
+      renderGroup();
+    }, (error) => {
+      console.warn("Firestore snapshot error:", error);
+      updateStatus("⚠️ Ngoại tuyến (Bấm để xem cấu hình)", "offline");
+      loadFromLocalStorage();
+    });
+
+  } catch (err) {
+    console.error("Firebase init failed:", err);
+    updateStatus("⚠️ Lỗi cấu hình Máy chủ Cloud", "offline");
+    loadFromLocalStorage();
+  }
+}
+
+function updateStatus(text, type) {
+  const dot = document.getElementById("statusDot");
+  const textEl = document.getElementById("statusText");
+  if (textEl) textEl.textContent = text;
+
+  if (dot) {
+    if (type === "online") {
+      dot.className = "w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse";
+      window.appState.isOnline = true;
+    } else {
+      dot.className = "w-2.5 h-2.5 rounded-full bg-rose-400";
+      window.appState.isOnline = false;
+    }
+  }
+
+  const titleEl = document.getElementById("cloudModalStatusTitle");
+  const descEl = document.getElementById("cloudModalStatusDesc");
+  if (titleEl && descEl) {
+    if (type === "online") {
+      titleEl.textContent = "🟢 Máy chủ Cloud Firestore: Đang kết nối Hoạt động!";
+      descEl.textContent = "Cơ sở dữ liệu đang đồng bộ thời gian thực. Bất kỳ ai mở trang web này ở thiết bị khác đều thấy điểm số thay đổi lập tức.";
+    } else {
+      titleEl.textContent = "⚠️ Chưa kết nối Máy chủ Trực tuyến";
+      descEl.textContent = "Dữ liệu hiện chỉ lưu trên máy này. Dán cấu hình Firebase của lớp bạn bên dưới để đồng bộ trực tiếp qua Internet.";
+    }
+  }
+}
+
+window.openCloudModal = function() {
+  const modal = document.getElementById("cloudModal");
+  if (modal) modal.classList.remove("hidden");
+  const savedConfig = localStorage.getItem("11A6_custom_firebase_config") || "";
+  const input = document.getElementById("customFirebaseInput");
+  if (input) input.value = savedConfig;
+};
+
+window.closeCloudModal = function() {
+  const modal = document.getElementById("cloudModal");
+  if (modal) modal.classList.add("hidden");
+};
+
+window.saveCustomFirebaseConfig = function() {
+  const text = (document.getElementById("customFirebaseInput")?.value || "").trim();
+  if (!text) {
+    showToast("⚠️ Vui lòng nhập thông số Firebase Config.", "⚠️");
+    return;
+  }
+  try {
+    JSON.parse(text);
+    localStorage.setItem("11A6_custom_firebase_config", text);
+    showToast("Đã lưu cấu hình! Đang kết nối lại...", "⚡");
+    closeCloudModal();
+    initFirebase();
+  } catch(e) {
+    showToast("❌ Định dạng JSON không hợp lệ!", "❌");
+  }
+};
+
+window.clearCustomFirebaseConfig = function() {
+  localStorage.removeItem("11A6_custom_firebase_config");
+  const input = document.getElementById("customFirebaseInput");
+  if (input) input.value = "";
+  showToast("Đã xóa cấu hình riêng. Đang kết nối hệ thống...", "🔄");
+  closeCloudModal();
+  initFirebase();
+};
+
+window.chooseGroup = function(g) {
+  window.appState.currentGroup = g;
+  document.querySelectorAll(".tab-btn").forEach((b, i) => {
+    if (i + 1 === g) b.classList.add("active-tab");
+    else b.classList.remove("active-tab");
+  });
+  showGroup();
+  renderGroup();
+};
+
+window.showGroup = function() {
+  document.getElementById("groupPage").classList.remove("hidden");
+  document.getElementById("leaderPage").classList.add("hidden");
+};
+
+window.showLeaderboard = function() {
+  document.getElementById("groupPage").classList.add("hidden");
+  document.getElementById("leaderPage").classList.remove("hidden");
+  renderLeaderboard();
+};
+
+window.renderGroup = function() {
+  const currentG = window.appState.currentGroup;
+  const search = (document.getElementById("search")?.value || "").toLowerCase().trim();
+  
+  const groupStudents = window.appState.data.filter(s => s.group === currentG);
+  const filtered = groupStudents.filter(s => s.name.toLowerCase().includes(search));
+
+  const totalScore = groupStudents.reduce((acc, s) => acc + (s.score !== undefined ? s.score : BASE_SCORE), 0);
+  
+  const totalEl = document.getElementById("groupTotal");
+  if (totalEl) totalEl.textContent = formatPoints(totalScore) + "đ";
+  
+  const membersEl = document.getElementById("groupMembers");
+  if (membersEl) membersEl.textContent = groupStudents.length;
+
+  const list = document.getElementById("groupList");
+  if (list) {
+    list.innerHTML = "";
+    if (filtered.length === 0) {
+      list.innerHTML = `<div class="text-center py-6 text-slate-400 text-xs font-medium">Không tìm thấy học sinh phù hợp.</div>`;
+    } else {
+      filtered.forEach((x) => {
+        const globalIdx = window.appState.data.findIndex(s => s.name === x.name);
+        const currentScore = x.score !== undefined ? x.score : (BASE_SCORE + (x.bonus || 0) - (x.penalty || 0));
+        let row = document.createElement("div");
+        row.className = "student-card grid grid-cols-12 gap-2 items-center bg-white p-3 rounded-2xl border border-slate-100 shadow-sm cursor-pointer relative group";
+        row.onclick = () => window.requestAddPoint(globalIdx);
+
+        let violations = Array.isArray(x.violations) ? x.violations : [];
+        let violationSummary = violations.length
+          ? `<div class="text-[11px] text-rose-500 font-medium mt-0.5 leading-tight">⚠️ ${violations.map(v => `${esc(v.text)} ×${v.quantity || 1}`).join(", ")}</div>`
+          : "";
+
+        row.innerHTML = `
+          <div class="col-span-1 text-xs font-bold text-slate-400">${globalIdx + 1}</div>
+          <div class="col-span-5">
+            <div class="font-bold text-sm text-slate-800 flex items-center gap-1.5">
+              ${esc(x.name)}
+              <button onclick="event.stopPropagation(); generateStudentFeedback(${globalIdx})" title="Tạo nhận xét AI" class="text-[10px] bg-purple-50 text-purple-600 hover:bg-purple-100 px-1.5 py-0.5 rounded-md font-semibold border border-purple-200/60 transition">
+                ✨ AI
+              </button>
+            </div>
+            ${violationSummary}
+          </div>
+          <div class="col-span-2 text-center font-bold text-xs text-emerald-600 bg-emerald-50 py-1 rounded-lg">+${formatPoints(x.bonus || 0)}</div>
+          <div class="col-span-2 text-center font-bold text-xs text-rose-500 bg-rose-50 py-1 rounded-lg">-${formatPoints(x.penalty || 0)}</div>
+          <div class="col-span-2 text-right font-black text-sm text-indigo-600">${formatPoints(currentScore)}đ</div>
+        `;
+        list.appendChild(row);
+      });
+    }
+  }
+
+  renderHistoryLists();
+};
+
+function renderHistoryLists() {
+  // Bonus History
+  const bonusList = document.getElementById("bonusHistoryList");
+  if (bonusList) {
+    bonusList.innerHTML = "";
+    let bonuses = [];
+    window.appState.data.forEach(s => {
+      (s.bonuses || []).forEach(b => {
+        bonuses.push({ name: s.name, ...b });
+      });
+    });
+    bonuses.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+    const recentBonuses = bonuses.slice(0, 8);
+
+    if (recentBonuses.length === 0) {
+      bonusList.innerHTML = `<div class="text-xs text-slate-400 italic">Chưa có thành tích cộng điểm nào.</div>`;
+    } else {
+      recentBonuses.forEach(b => {
+        let div = document.createElement("div");
+        div.className = "flex justify-between items-center text-xs p-2 bg-emerald-50/50 rounded-xl border border-emerald-100";
+        div.innerHTML = `
+          <div>
+            <span class="font-bold text-slate-800">${esc(b.name)}</span>
+            <span class="text-slate-500"> - ${esc(b.text)}</span>
+          </div>
+          <span class="font-bold text-emerald-600">+${formatPoints(b.points)}đ</span>
+        `;
+        bonusList.appendChild(div);
+      });
+    }
+  }
+
+  // Violation History
+  const violationList = document.getElementById("violationHistoryList");
+  if (violationList) {
+    violationList.innerHTML = "";
+    let violations = [];
+    window.appState.data.forEach(s => {
+      (s.violations || []).forEach(v => {
+        violations.push({ name: s.name, ...v });
+      });
+    });
+    violations.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+    const recentViolations = violations.slice(0, 8);
+
+    if (recentViolations.length === 0) {
+      violationList.innerHTML = `<div class="text-xs text-slate-400 italic">Chưa ghi nhận lỗi vi phạm nào.</div>`;
+    } else {
+      recentViolations.forEach(v => {
+        let div = document.createElement("div");
+        div.className = "flex justify-between items-center text-xs p-2 bg-rose-50/50 rounded-xl border border-rose-100";
+        div.innerHTML = `
+          <div>
+            <span class="font-bold text-slate-800">${esc(v.name)}</span>
+            <span class="text-slate-500"> - ${esc(v.text)}</span>
+          </div>
+          <span class="font-bold text-rose-600">-${formatPoints(v.stars)}đ</span>
+        `;
+        violationList.appendChild(div);
+      });
+    }
+  }
+
+  // Audit History
+  const auditList = document.getElementById("auditHistoryList");
+  if (auditList) {
+    auditList.innerHTML = "";
+    const audits = (window.appState.auditHistory || []).slice(-10).reverse();
+
+    if (audits.length === 0) {
+      auditList.innerHTML = `<div class="text-xs text-slate-400 italic">Chưa có lịch sử thao tác.</div>`;
+    } else {
+      audits.forEach(a => {
+        let div = document.createElement("div");
+        div.className = "flex justify-between items-center text-[11px] p-2 bg-slate-50 rounded-xl border border-slate-100";
+        div.innerHTML = `
+          <div>
+            <span class="font-bold text-indigo-700">👤 ${esc(a.user || "Vô danh")}</span>
+            <span class="text-slate-600"> [${esc(a.action)}]: ${esc(a.details)}</span>
+          </div>
+          <span class="text-slate-400 text-[10px]">${esc(a.time)}</span>
+        `;
+        auditList.appendChild(div);
+      });
+    }
+  }
+}
+
+window.renderLeaderboard = function() {
+  const list = document.getElementById("leaderList");
+  if (!list) return;
+
+  const totalClassPoints = window.appState.data.reduce((acc, s) => acc + (s.score !== undefined ? s.score : BASE_SCORE), 0);
+  const allTotalEl = document.getElementById("allTotal");
+  if (allTotalEl) allTotalEl.textContent = formatPoints(totalClassPoints) + "đ";
+
+  const groupScores = [1, 2, 3, 4].map(g => {
+    const mems = window.appState.data.filter(s => s.group === g);
+    const score = mems.reduce((acc, s) => acc + (s.score !== undefined ? s.score : BASE_SCORE), 0);
+    return { group: g, score, count: mems.length };
+  });
+  groupScores.sort((a, b) => b.score - a.score);
+
+  list.innerHTML = "";
+
+  let gHeader = document.createElement("div");
+  gHeader.className = "font-extrabold text-slate-700 text-sm mb-2 text-indigo-900 flex items-center gap-1.5";
+  gHeader.innerHTML = `<i class="fa-solid fa-users"></i> Bảng xếp hạng các Tổ`;
+  list.appendChild(gHeader);
+
+  groupScores.forEach((g, rank) => {
+    let medals = ["🥇", "🥈", "🥉", "4️⃣"];
+    let card = document.createElement("div");
+    card.className = "flex justify-between items-center bg-indigo-50/50 p-3 rounded-2xl border border-indigo-100 font-medium text-xs sm:text-sm";
+    card.innerHTML = `
+      <div class="flex items-center gap-2">
+        <span class="text-lg">${medals[rank] || "🔹"}</span>
+        <span class="font-bold text-slate-800">TỔ ${g.group}</span>
+        <span class="text-slate-400 text-xs">(${g.count} thành viên)</span>
+      </div>
+      <span class="font-black text-indigo-600 text-base">${formatPoints(g.score)}đ</span>
+    `;
+    list.appendChild(card);
+  });
+
+  let sHeader = document.createElement("div");
+  sHeader.className = "font-extrabold text-slate-700 text-sm mt-6 mb-2 text-indigo-900 flex items-center gap-1.5";
+  sHeader.innerHTML = `<i class="fa-solid fa-trophy"></i> Top 10 Học sinh điểm cao nhất`;
+  list.appendChild(sHeader);
+
+  const sortedStudents = [...window.appState.data].sort((a, b) => (b.score || BASE_SCORE) - (a.score || BASE_SCORE));
+  const top10 = sortedStudents.slice(0, 10);
+
+  top10.forEach((s, rank) => {
+    let card = document.createElement("div");
+    card.className = "flex justify-between items-center bg-white p-3 rounded-2xl border border-slate-100 text-xs sm:text-sm shadow-sm";
+    card.innerHTML = `
+      <div class="flex items-center gap-3">
+        <span class="w-6 h-6 flex items-center justify-center font-bold rounded-full ${rank < 3 ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-600'} text-xs">${rank + 1}</span>
+        <div>
+          <span class="font-bold text-slate-800">${esc(s.name)}</span>
+          <span class="text-slate-400 text-xs ml-1">(Tổ ${s.group})</span>
+        </div>
+      </div>
+      <span class="font-black text-indigo-600">${formatPoints(s.score)}đ</span>
+    `;
+    list.appendChild(card);
+  });
+};
+
+window.confirmUserName = function() {
+  let name = document.getElementById("userNameInput").value.trim().replace(/\s+/g, " ");
+  if (name.length < 2) {
+    document.getElementById("userNameStatus").textContent = "❌ Vui lòng nhập họ và tên hợp lệ.";
+    return;
+  }
+  window.appState.currentUser = name;
+  localStorage.setItem("11A6_user_name", name);
+  document.getElementById("userModal").classList.add("hidden");
+  updateUserDisplay();
+  logAction("Truy cập", "Đã xác nhận tên người thao tác");
+
+  if (typeof window.afterUserConfirm === "function") {
+    let cb = window.afterUserConfirm;
+    window.afterUserConfirm = null;
+    cb();
+  }
+};
+
+window.changeUser = function() {
+  document.getElementById("userNameInput").value = window.appState.currentUser;
+  document.getElementById("userModal").classList.remove("hidden");
+};
+
+function updateUserDisplay() {
+  if (window.appState.currentUser) {
+    document.getElementById("currentUserDisplay").classList.remove("hidden");
+    document.getElementById("currentUserName").textContent = window.appState.currentUser;
+  }
+}
+
+function ensureUser(callback) {
+  if (window.appState.currentUser) {
+    callback();
+    return;
+  }
+  document.getElementById("userModal").classList.remove("hidden");
+  window.afterUserConfirm = callback;
+}
+
+window.requestAddPoint = function(index) {
+  ensureUser(() => openPasswordForAction("add", index));
+};
+
+window.requestProtected = function(action) {
+  ensureUser(() => openPasswordForAction(action));
+};
+
+function openPasswordForAction(action, index = null) {
+  window.appState.pendingAction = action;
+  window.appState.pendingIndex = index;
+  document.getElementById("passwordInput").value = "";
+  document.getElementById("passwordStatus").textContent = "";
+  document.getElementById("passwordModal").classList.remove("hidden");
+  setTimeout(() => document.getElementById("passwordInput").focus(), 100);
+}
+
+window.closePasswordModal = function() {
+  document.getElementById("passwordModal").classList.add("hidden");
+  window.appState.pendingAction = null;
+  window.appState.pendingIndex = null;
+};
+
+window.checkPassword = function() {
+  if (document.getElementById("passwordInput").value === PROTECTED_PASSWORD) {
+    const action = window.appState.pendingAction;
+    const index = window.appState.pendingIndex;
+    closePasswordModal();
+
+    if (action === "add") openEntryModal(index);
+    if (action === "undo") undo();
+    if (action === "reset") openResetModal();
+    if (action === "classNoise") applyClassPenalty();
+  } else {
+    document.getElementById("passwordStatus").textContent = "❌ Mật khẩu không chính xác.";
+    document.getElementById("passwordInput").value = "";
+  }
+};
+
+function openEntryModal(index) {
+  window.appState.selectedIndex = index;
+  const student = window.appState.data[index];
+  document.getElementById("entryStudent").textContent = "Học sinh: " + student.name;
+  document.getElementById("starInput").value = 1;
+  document.getElementById("quantityInput").value = 1;
+  document.getElementById("bonusSelect").value = "";
+  document.getElementById("bonusEffect").textContent = "";
+  document.getElementById("violationSelect").value = "";
+  document.getElementById("violationInput").value = "";
+  document.getElementById("violationEffect").textContent = "";
+  document.getElementById("entryModal").classList.remove("hidden");
+}
+
+window.closeEntryModal = function() {
+  document.getElementById("entryModal").classList.add("hidden");
+  window.appState.selectedIndex = null;
+};
+
+window.applyBonusRule = function() {
+  const val = document.getElementById("bonusSelect").value;
+  if (val) {
+    document.getElementById("violationSelect").value = "";
+    document.getElementById("violationInput").value = "";
+    document.getElementById("violationEffect").textContent = "";
+    const [pts] = val.split("|");
+    document.getElementById("starInput").value = pts;
+    updateCalculatedEffect();
+  }
+};
+
+window.applyViolationRule = function() {
+  const val = document.getElementById("violationSelect").value;
+  if (val) {
+    document.getElementById("bonusSelect").value = "";
+    document.getElementById("bonusEffect").textContent = "";
+    const [pts] = val.split("|");
+    document.getElementById("starInput").value = Math.abs(parseFloat(pts));
+    updateCalculatedEffect();
+  }
+};
+
+window.updateCalculatedEffect = function() {
+  const bonusVal = document.getElementById("bonusSelect").value;
+  const violationSelectVal = document.getElementById("violationSelect").value;
+  const starVal = parseFloat(document.getElementById("starInput").value) || 0;
+  const qtyVal = parseInt(document.getElementById("quantityInput").value) || 1;
+  const total = starVal * qtyVal;
+
+  if (bonusVal) {
+    document.getElementById("bonusEffect").textContent = `✨ Tổng cộng: +${total} điểm`;
+    document.getElementById("violationEffect").textContent = "";
+  } else if (violationSelectVal || document.getElementById("violationInput").value.trim()) {
+    document.getElementById("violationEffect").textContent = `⚠️ Tổng trừ: -${total} điểm`;
+    document.getElementById("bonusEffect").textContent = "";
+  }
+};
+
+window.confirmAddPoint = function() {
+  const index = window.appState.selectedIndex;
+  if (index === null || index === undefined) return;
+  const student = window.appState.data[index];
+  
+  const bonusVal = document.getElementById("bonusSelect").value;
+  const violationSelectVal = document.getElementById("violationSelect").value;
+  const violationCustomVal = document.getElementById("violationInput").value.trim();
+  const starInputVal = parseFloat(document.getElementById("starInput").value) || 0;
+  const qtyInputVal = parseInt(document.getElementById("quantityInput").value) || 1;
+  
+  const timestamp = new Date().toLocaleString("vi-VN");
+  
+  if (bonusVal) {
+    const [pts, name] = bonusVal.split("|");
+    const points = parseFloat(pts) * qtyInputVal;
+    student.bonus = (student.bonus || 0) + points;
+    if (!Array.isArray(student.bonuses)) student.bonuses = [];
+    student.bonuses.push({ text: name, points: points, quantity: qtyInputVal, date: timestamp });
+    window.appState.history.push({ index, type: "bonus", points, text: name, quantity: qtyInputVal });
+  } else if (violationSelectVal || violationCustomVal) {
+    let pts = 0;
+    let name = "";
+    if (violationSelectVal) {
+      const [p, n] = violationSelectVal.split("|");
+      pts = Math.abs(parseFloat(p));
+      name = n;
+    } else {
+      pts = starInputVal;
+      name = violationCustomVal;
+    }
+    const penaltyPoints = pts * qtyInputVal;
+    student.penalty = (student.penalty || 0) + penaltyPoints;
+    if (!Array.isArray(student.violations)) student.violations = [];
+    student.violations.push({ text: name, stars: penaltyPoints, quantity: qtyInputVal, date: timestamp });
+    window.appState.history.push({ index, type: "violation", points: penaltyPoints, text: name, quantity: qtyInputVal });
+  }
+  
+  // TÍNH ĐIỂM DỰA TRÊN GỐC 100 ĐIỂM
+  student.score = BASE_SCORE + (student.bonus || 0) - (student.penalty || 0);
+  logAction("Cập nhật điểm", `${student.name}: Điểm hiện tại (${student.score}đ)`);
+  
+  syncToCloud();
+  renderGroup();
+  closeEntryModal();
+  showToast(`Đã cập nhật điểm cho ${student.name}`, "⭐");
+};
+
+window.undo = function() {
+  if (!window.appState.history.length) {
+    showToast("Không có thao tác nào để hoàn tác", "⚠️");
+    return;
+  }
+  const last = window.appState.history.pop();
+  const student = window.appState.data[last.index];
+  if (student) {
+    if (last.type === "bonus") {
+      student.bonus = Math.max(0, (student.bonus || 0) - last.points);
+      if (Array.isArray(student.bonuses)) student.bonuses.pop();
+    } else if (last.type === "violation") {
+      student.penalty = Math.max(0, (student.penalty || 0) - last.points);
+      if (Array.isArray(student.violations)) student.violations.pop();
+    }
+    student.score = BASE_SCORE + (student.bonus || 0) - (student.penalty || 0);
+    logAction("Hoàn tác", `Hoàn tác thao tác cho ${student.name}`);
+    syncToCloud();
+    renderGroup();
+    showToast(`Đã hoàn tác điểm cho ${student.name}`, "🔄");
+  }
+};
+
+window.applyClassPenalty = function() {
+  const timestamp = new Date().toLocaleString("vi-VN");
+  window.appState.data.forEach(student => {
+    student.penalty = (student.penalty || 0) + 10;
+    if (!Array.isArray(student.violations)) student.violations = [];
+    student.violations.push({ text: "Lớp ồn", stars: 10, quantity: 1, date: timestamp });
+    student.score = BASE_SCORE + (student.bonus || 0) - (student.penalty || 0);
+  });
+  logAction("Trừ điểm lớp ồn", "Trừ 10 điểm toàn bộ học sinh do lớp ồn");
+  syncToCloud();
+  renderGroup();
+  showToast("Đã trừ 10 điểm toàn lớp do ồn!", "🔊");
+};
+
+function openResetModal() {
+  document.getElementById("resetModal").classList.remove("hidden");
+}
+
+window.closeResetModal = function() {
+  document.getElementById("resetModal").classList.add("hidden");
+};
+
+// CHỨC NĂNG RESET ĐỊNH KỲ THÁNG - ĐƯA VỀ MẶC ĐỊNH 100 ĐIỂM
+window.confirmReset = function() {
+  window.appState.data.forEach(s => {
+    s.bonus = 0;
+    s.penalty = 0;
+    s.score = BASE_SCORE; // Reset về 100đ
+    s.violations = [];
+    s.bonuses = [];
+  });
+  window.appState.history = [];
+  logAction("Reset điểm", "Reset toàn bộ điểm thi đua lớp về 100đ gốc");
+  syncToCloud();
+  renderGroup();
+  closeResetModal();
+  showToast("Đã reset toàn bộ điểm lớp về 100đ!", "🔄");
+};
+
+async function callGemini(userQuery, systemPrompt = "") {
+  const apiKey = "";
+  const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+  const payload = {
+    contents: [{ parts: [{ text: userQuery }] }]
+  };
+  if (systemPrompt) {
+    payload.systemInstruction = { parts: [{ text: systemPrompt }] };
+  }
+
+  let delay = 1000;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const res = await fetch(apiUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const result = await res.json();
+      const text = result?.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (text) return text;
+    } catch (e) {
+      if (attempt === 2) throw e;
+      await new Promise(r => setTimeout(r, delay));
+      delay *= 2;
+    }
+  }
+  throw new Error("Không thể kết nối Gemini API");
+}
+
+async function callGeminiJSON(userQuery, systemPrompt, responseSchema) {
+  const apiKey = "";
+  const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+  const payload = {
+    contents: [{ parts: [{ text: userQuery }] }],
+    generationConfig: {
+      responseMimeType: "application/json",
+      responseSchema: responseSchema
+    }
+  };
+  if (systemPrompt) {
+    payload.systemInstruction = { parts: [{ text: systemPrompt }] };
+  }
+
+  let delay = 1000;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const res = await fetch(apiUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const result = await res.json();
+      const jsonText = result?.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (jsonText) return JSON.parse(jsonText);
+    } catch (e) {
+      if (attempt === 2) throw e;
+      await new Promise(r => setTimeout(r, delay));
+      delay *= 2;
+    }
+  }
+  throw new Error("Không thể xử lý dữ liệu từ Gemini API");
+}
+
+function getClassContextSummary() {
+  const students = window.appState.data;
+  const groups = [1, 2, 3, 4].map(g => {
+    const list = students.filter(s => s.group === g);
+    const total = list.reduce((acc, curr) => acc + (curr.score || BASE_SCORE), 0);
+    return { group: g, totalScore: total, memberCount: list.length };
+  });
+
+  const sortedStudents = [...students].sort((a, b) => (b.score || BASE_SCORE) - (a.score || BASE_SCORE));
+  const top3 = sortedStudents.slice(0, 3).map(s => `${s.name} (${s.score}đ)`);
+  const bottom3 = sortedStudents.slice(-3).map(s => `${s.name} (${s.score}đ)`);
+
+  const totalViolations = students.reduce((acc, s) => acc + (s.violations ? s.violations.length : 0), 0);
+
+  return `
+Lớp 11A6 tổng cộng ${students.length} học sinh (Điểm vốn ban đầu 100đ/học sinh).
+Điểm thi đua hiện tại theo Tổ:
+- Tổ 1: ${groups[0].totalScore}đ (${groups[0].memberCount} TV)
+- Tổ 2: ${groups[1].totalScore}đ (${groups[1].memberCount} TV)
+- Tổ 3: ${groups[2].totalScore}đ (${groups[2].memberCount} TV)
+- Tổ 4: ${groups[3].totalScore}đ (${groups[3].memberCount} TV)
+Top 3 xuất sắc nhất: ${top3.join(", ")}
+Top 3 cần cố gắng: ${bottom3.join(", ")}
+Tổng số lượt vi phạm ghi nhận: ${totalViolations}
+`;
+}
+
+// AI Feature 1: Class Report Modal
+window.openAIReportModal = function() {
+  document.getElementById("aiReportModal").classList.remove("hidden");
+  generateAIReport();
+};
+
+window.closeAIReportModal = function() {
+  document.getElementById("aiReportModal").classList.add("hidden");
+};
+
+window.generateAIReport = async function() {
+  const content = document.getElementById("aiReportContent");
+  content.innerHTML = `
+    <div class="text-center py-8 text-slate-400 space-y-3">
+      <i class="fa-solid fa-spinner fa-spin text-3xl text-purple-600"></i>
+      <p class="font-medium text-xs">Gemini AI đang tổng hợp và phân tích dữ liệu thi đua của 11A6...</p>
+    </div>
+  `;
+
+  const context = getClassContextSummary();
+  const systemPrompt = "Bạn là trợ lý thi đua trường THPT, chuyên viết báo cáo tổng kết thi đua lớp 11A6 thân thiện, rõ ràng, giàu động lực nhưng khách quan.";
+  const query = `Hãy viết một báo cáo tổng kết thi đua ngắn gọn cho lớp 11A6 dựa trên dữ liệu sau (Lưu ý điểm gốc ban đầu là 100đ):\n${context}\n\nBáo cáo bao gồm:\n1. 📊 Đánh giá tổng quan nề nếp lớp\n2. 🏆 Tuyên dương Tổ & Cá nhân tiêu biểu\n3. ⚠️ Nhắc nhở các điểm cần khắc phục\n4. 💡 2 Khuyến nghị thiết thực cho tuần tới. Trình bày dạng HTML đẹp mắt (dùng <h4>, <ul>, <li>, <strong>, thẻ highlight).`;
+
+  try {
+    const reportHtml = await callGemini(query, systemPrompt);
+    content.innerHTML = reportHtml;
+  } catch (err) {
+    content.innerHTML = `<div class="text-rose-500 font-bold text-center py-4">❌ Lỗi tạo báo cáo: ${err.message}</div>`;
+  }
+};
+
+window.copyAIReport = function() {
+  const content = document.getElementById("aiReportContent").innerText;
+  navigator.clipboard.writeText(content).then(() => {
+    showToast("Đã sao chép báo cáo AI!", "📋");
+  }).catch(() => {
+    const textarea = document.createElement("textarea");
+    textarea.value = content;
+    document.body.appendChild(textarea);
+    textarea.select();
+    document.execCommand("copy");
+    document.body.removeChild(textarea);
+    showToast("Đã sao chép báo cáo AI!", "📋");
+  });
+};
+
+// AI Feature 2: Class Advisor Chatbot
+window.openAIChatModal = function() {
+  document.getElementById("aiChatModal").classList.remove("hidden");
+};
+
+window.closeAIChatModal = function() {
+  document.getElementById("aiChatModal").classList.add("hidden");
+};
+
+window.sendQuickPrompt = function(promptText) {
+  document.getElementById("aiChatInput").value = promptText;
+  sendAIChat();
+};
+
+window.sendAIChat = async function() {
+  const input = document.getElementById("aiChatInput");
+  const text = input.value.trim();
+  if (!text) return;
+
+  const history = document.getElementById("aiChatHistory");
+
+  const userMsg = document.createElement("div");
+  userMsg.className = "bg-purple-600 text-white p-3 rounded-2xl ml-8 text-xs font-medium shadow-sm text-right";
+  userMsg.textContent = text;
+  history.appendChild(userMsg);
+
+  input.value = "";
+  history.scrollTop = history.scrollHeight;
+
+  const aiMsg = document.createElement("div");
+  aiMsg.className = "bg-white p-3 rounded-2xl border border-slate-200/60 shadow-sm text-xs text-slate-700 space-y-1 mr-8";
+  aiMsg.innerHTML = `<i class="fa-solid fa-spinner fa-spin text-purple-600"></i> <span class="text-slate-400">Gemini đang suy nghĩ...</span>`;
+  history.appendChild(aiMsg);
+  history.scrollTop = history.scrollHeight;
+
+  const context = getClassContextSummary();
+  const systemPrompt = `Bạn là Cố vấn Thi đua AI thông minh của lớp 11A6 THPT. Bạn trả lời ngắn gọn, thiết thực, mang tính xây dựng. Dữ liệu hiện tại của lớp 11A6 (gốc 100đ):\n${context}`;
+
+  try {
+    const reply = await callGemini(text, systemPrompt);
+    aiMsg.innerHTML = `
+      <div class="font-bold text-purple-700 flex items-center gap-1.5 mb-1">
+        <i class="fa-solid fa-robot"></i> Cố vấn AI 11A6
+      </div>
+      <div>${reply.replace(/\n/g, '<br>')}</div>
+    `;
+  } catch (err) {
+    aiMsg.innerHTML = `<span class="text-rose-500 font-bold">❌ Không thể kết nối AI: ${err.message}</span>`;
+  }
+  history.scrollTop = history.scrollHeight;
+};
+
+// AI Feature 3: Natural Language Point Assigner
+let parsedPendingActions = [];
+
+window.openAINLInputModal = function() {
+  document.getElementById("aiNLInputModal").classList.remove("hidden");
+  document.getElementById("aiNLInputText").value = "";
+  document.getElementById("aiNLPendingPreview").classList.add("hidden");
+  document.getElementById("aiNLApplyBtn").classList.add("hidden");
+  document.getElementById("aiNLParseBtn").classList.remove("hidden");
+  parsedPendingActions = [];
+};
+
+window.closeAINLInputModal = function() {
+  document.getElementById("aiNLInputModal").classList.add("hidden");
+};
+
+window.processAINLInput = async function() {
+  const text = document.getElementById("aiNLInputText").value.trim();
+  if (!text) {
+    showToast("⚠️ Vui lòng nhập nội dung lời nhắn.", "⚠️");
+    return;
+  }
+
+  const parseBtn = document.getElementById("aiNLParseBtn");
+  parseBtn.disabled = true;
+  parseBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Đang phân tích...`;
+
+  const studentNames = window.appState.data.map(s => s.name);
+  const systemPrompt = `Bạn là trợ lý trích xuất điểm thi đua từ văn bản. Danh sách học sinh chính xác của lớp 11A6 gồm: ${JSON.stringify(studentNames)}. Hãy khớp tên học sinh trong văn bản với tên gần đúng nhất trong danh sách. Nếu điểm là phạt/trừ thì delta mang dấu âm (ví dụ: -5), nếu là cộng/thưởng thì delta mang dấu dương (ví dụ: 5).`;
+
+  const schema = {
+    type: "ARRAY",
+    items: {
+      type: "OBJECT",
+      properties: {
+        studentName: { type: "STRING" },
+        delta: { type: "NUMBER" },
+        reason: { type: "STRING" },
+        isViolation: { type: "BOOLEAN" }
+      },
+      required: ["studentName", "delta", "reason", "isViolation"]
+    }
+  };
+
+  try {
+    const result = await callGeminiJSON(`Phân tích câu thao tác điểm sau: "${text}"`, systemPrompt, schema);
+    parseBtn.disabled = false;
+    parseBtn.innerHTML = `✨ AI Phân tích`;
+
+    if (!Array.isArray(result) || result.length === 0) {
+      showToast("Không tìm thấy học sinh hoặc thao tác điểm nào.", "⚠️");
+      return;
+    }
+
+    parsedPendingActions = result;
+    renderNLPreview();
+  } catch (err) {
+    parseBtn.disabled = false;
+    parseBtn.innerHTML = `✨ AI Phân tích`;
+    showToast("Lỗi phân tích: " + err.message, "❌");
+  }
+};
+
+function renderNLPreview() {
+  const previewBox = document.getElementById("aiNLPendingPreview");
+  const list = document.getElementById("aiNLPreviewList");
+  list.innerHTML = "";
+
+  parsedPendingActions.forEach(a => {
+    const matched = window.appState.data.find(s => s.name.toLowerCase() === a.studentName.toLowerCase());
+    const matchedName = matched ? matched.name : `${a.studentName} (Không tìm thấy)`;
+    const sign = a.delta >= 0 ? "+" : "";
+    const color = a.delta >= 0 ? "text-emerald-600 font-bold" : "text-rose-600 font-bold";
+
+    const item = document.createElement("div");
+    item.className = "flex justify-between items-center bg-white p-2 rounded-lg border border-slate-200 text-xs";
+    item.innerHTML = `
+      <div>
+        <span class="font-bold text-slate-800">${esc(matchedName)}</span>
+        <span class="text-slate-500 text-[11px]"> (${esc(a.reason)})</span>
+      </div>
+      <span class="${color}">${sign}${a.delta}đ</span>
+    `;
+    list.appendChild(item);
+  });
+
+  previewBox.classList.remove("hidden");
+  document.getElementById("aiNLApplyBtn").classList.remove("hidden");
+}
+
+window.applyAINLPoints = function() {
+  if (!parsedPendingActions.length) return;
+
+  const timestamp = new Date().toLocaleString("vi-VN");
+  let appliedCount = 0;
+
+  parsedPendingActions.forEach(a => {
+    const idx = window.appState.data.findIndex(s => s.name.toLowerCase() === a.studentName.toLowerCase());
+    if (idx !== -1) {
+      const x = window.appState.data[idx];
+      if (!Number.isFinite(x.bonus)) x.bonus = 0;
+      if (!Number.isFinite(x.penalty)) x.penalty = 0;
+
+      if (a.delta >= 0) {
+        x.bonus += a.delta;
+        if (!Array.isArray(x.bonuses)) x.bonuses = [];
+        x.bonuses.push({ text: a.reason, points: a.delta, quantity: 1, date: timestamp });
+      } else {
+        x.penalty += Math.abs(a.delta);
+        if (!Array.isArray(x.violations)) x.violations = [];
+        x.violations.push({ text: a.reason, stars: Math.abs(a.delta), quantity: 1, date: timestamp });
+      }
+
+      x.score = BASE_SCORE + x.bonus - x.penalty;
+      window.appState.history.push({ index: idx, delta: a.delta, violation: a.isViolation, bonus: a.delta > 0 });
+      appliedCount++;
+    }
+  });
+
+  if (appliedCount > 0) {
+    logAction("Nhập điểm AI", `Cập nhật điểm AI hàng loạt cho ${appliedCount} học sinh`);
+    syncToCloud();
+    closeAINLInputModal();
+    showToast(`Đã tự động cập nhật điểm cho ${appliedCount} học sinh!`, "✨");
+  } else {
+    showToast("Không tìm thấy học sinh trùng khớp để cập nhật.", "⚠️");
+  }
+};
+
+// AI Feature 4: Individual Student Feedback
+window.generateStudentFeedback = async function(index) {
+  const student = window.appState.data[index];
+  if (!student) return;
+
+  document.getElementById("aiStudentModalTitle").textContent = `Nhận xét AI: ${student.name}`;
+  document.getElementById("aiStudentFeedbackContent").innerHTML = `
+    <div class="text-center text-slate-400 py-4 w-full">
+      <i class="fa-solid fa-spinner fa-spin text-2xl text-purple-600 mb-2"></i>
+      <p>Gemini AI đang phân tích quá trình của ${student.name}...</p>
+    </div>
+  `;
+  document.getElementById("aiStudentModal").classList.remove("hidden");
+
+  const violations = (student.violations || []).map(v => v.text).join(", ");
+  const bonuses = (student.bonuses || []).map(b => b.text).join(", ");
+
+  const prompt = `
+Học sinh: ${student.name} (Tổ ${student.group})
+Điểm hiện tại: ${student.score} điểm (Gốc 100đ, Cộng: +${student.bonus}, Trừ: -${student.penalty})
+Thành tích: ${bonuses || "Chưa có"}
+Lỗi vi phạm: ${violations || "Không có"}
+
+Viết một đoạn nhận xét ngắn 2-3 câu khích lệ học sinh này, đưa ra lời khuyên cụ thể dựa trên điểm số và vi phạm trên. Giọng văn chân thành, tình cảm, sư phạm.
+`;
+
+  try {
+    const feedback = await callGemini(prompt, "Bạn là giáo viên chủ nhiệm tâm lý lớp 11A6.");
+    document.getElementById("aiStudentFeedbackContent").innerHTML = `<div class="text-slate-800 font-medium">${feedback.replace(/\n/g, '<br>')}</div>`;
+  } catch (err) {
+    document.getElementById("aiStudentFeedbackContent").innerHTML = `<div class="text-rose-500 font-bold">❌ Lỗi: ${err.message}</div>`;
+  }
+};
+
+window.closeAIStudentModal = function() {
+  document.getElementById("aiStudentModal").classList.add("hidden");
+};
+
+window.copyAIStudentFeedback = function() {
+  const text = document.getElementById("aiStudentFeedbackContent").innerText;
+  navigator.clipboard.writeText(text).then(() => {
+    showToast("Đã sao chép nhận xét AI!", "📋");
+  });
+};
+
+window.addEventListener("DOMContentLoaded", () => {
+  updateUserDisplay();
+  initFirebase();
+});
+
+// Chức năng Phóng to toàn màn hình & Tự động ẩn thanh AI
+window.toggleFullscreen = function() {
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen().then(() => {
+      document.body.classList.add("fullscreen-active");
+      const btnText = document.getElementById("fsBtnText");
+      const fsIcon = document.getElementById("fsIcon");
+      if (btnText) btnText.textContent = "Thoát phóng to";
+      if (fsIcon) fsIcon.className = "fa-solid fa-compress text-amber-300";
+      showToast("Đã chuyển sang chế độ Phóng to trình chiếu!", "🖥️");
+    }).catch(err => {
+      showToast("Không thể mở toàn màn hình: " + err.message, "⚠️");
+    });
+  } else {
+    if (document.exitFullscreen) {
+      document.exitFullscreen().then(() => {
+        document.body.classList.remove("fullscreen-active");
+        const btnText = document.getElementById("fsBtnText");
+        const fsIcon = document.getElementById("fsIcon");
+        if (btnText) btnText.textContent = "Phóng to màn hình";
+        if (fsIcon) fsIcon.className = "fa-solid fa-expand text-emerald-200";
+      });
+    }
+  }
+};
+
+document.addEventListener("fullscreenchange", () => {
+  if (!document.fullscreenElement) {
+    document.body.classList.remove("fullscreen-active");
+    const btnText = document.getElementById("fsBtnText");
+    const fsIcon = document.getElementById("fsIcon");
+    if (btnText) btnText.textContent = "Phóng to màn hình";
+    if (fsIcon) fsIcon.className = "fa-solid fa-expand text-emerald-200";
+  }
+});
+</script>
+
+<footer class="text-center text-slate-400 text-xs py-6">
+  ⭐ 11A6 POINTS • Hệ thống trực tuyến đồng bộ thời gian thực
+</footer>
+
+</body>
+</html>
